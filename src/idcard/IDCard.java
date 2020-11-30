@@ -41,8 +41,8 @@ public class IDCard {
         // TODO code application logic here
         System.load("D:\\OpenCV\\opencv\\build\\java\\x64\\opencv_java440.dll");
         String file = "D:\\DATN\\Img\\sample\\standard\\imgEx1.jpg";
-        Process p = Runtime.getRuntime().exec("cmd /c start cmd.exe /K \"cd cropImg && python YOLO.py -i "
-                + file + " -cl yolo.names -w yolov4-custom_final.weights -c yolov4-custom.cfg && exit\"");
+        Process p = Runtime.getRuntime().exec("cmd /c start cmd.exe /K \"cd cropImg && python CROPIMG-YOLO.py -i "
+                + file + " -cl cropImg-yolo.names -w cropImg-yolov4-custom_final.weights -c yolov4-custom.cfg && exit\"");
         BufferedReader is
                 = new BufferedReader(new InputStreamReader(p.getInputStream()));
         // reading the output 
