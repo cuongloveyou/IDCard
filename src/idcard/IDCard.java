@@ -40,13 +40,13 @@ public class IDCard {
     public static void main(String[] args) throws IOException {
         // TODO code application logic here
         System.load("D:\\OpenCV\\opencv\\build\\java\\x64\\opencv_java440.dll");
-        String file = "D:\\ProjectI\\imgEx1.jpg";
-//        Process p = Runtime.getRuntime().exec("cmd /c start cmd.exe /K \"cd cropImg && python YOLO.py -i "
-//                + file + " -cl yolo.names -w yolov4-custom_final.weights -c yolov4-custom.cfg && exit\"");
-//        BufferedReader is
-//                = new BufferedReader(new InputStreamReader(p.getInputStream()));
-//        // reading the output 
-//        while (is.readLine() != null);
+        String file = "D:\\DATN\\sampleTrain\\119111316_3275929089194351_7971241321062373201_o.jpg";
+        Process p = Runtime.getRuntime().exec("cmd /c start cmd.exe /K \"cd cropImg && python YOLO.py -i "
+                + file + " -cl yolo.names -w yolov4-custom_final.weights -c yolov4-custom.cfg && exit\"");
+        BufferedReader is
+                = new BufferedReader(new InputStreamReader(p.getInputStream()));
+        // reading the output 
+        while (is.readLine() != null);
         Scanner sc = new Scanner(new File("D:\\DATN\\NetBeans\\IDCard\\cropImg\\boxes.txt"));
         int classId, x, y, w, h;
         Rect boxNE = null; // box chua Quoc Huy
@@ -70,13 +70,18 @@ public class IDCard {
         Mat cropMat = iDCard.cropImg(oriMat, boxNE, cornerList);
         Imgcodecs.imwrite("D:/ProjectI/cropImg.jpg", cropMat);
 
+        int imgW = cropMat.cols();
+        int imgH = cropMat.rows();
         //file=args[0];
-        Mat outGray = new Mat(new Size(500, 300), CvType.CV_16F);
+        Mat outGray = new Mat(new Size(imgW, imgH), CvType.CV_16F);
         Imgproc.cvtColor(cropMat, outGray, Imgproc.COLOR_RGB2GRAY);
+        //Imgproc.equalizeHist(outGray, outGray);
         //Mat outGray = Imgcodecs.imread(file, 2); // doc anh gray
         Core.bitwise_not(outGray, outGray);
-        Mat outBW = new Mat(new Size(500, 300), CvType.CV_16F);
+
+        Mat outBW = new Mat(new Size(imgW, imgH), CvType.CV_16F);
         Imgproc.cvtColor(cropMat, outBW, Imgproc.COLOR_RGB2GRAY);
+        //Imgproc.equalizeHist(outBW, outBW);
         //Mat outBW = Imgcodecs.imread(file, 2);
         Core.bitwise_not(outBW, outBW);         // dao tat ca cac bit
         Imgcodecs.imwrite("D:/ProjectI/gray.jpg", outBW);
@@ -90,10 +95,11 @@ public class IDCard {
 
         Mat drawing = Mat.zeros(outBW.size(), CvType.CV_16F);
         Scalar color = new Scalar(255, 255, 255);
+        Scalar color1 = new Scalar(222, 111, 111);
         int s;
         int sImg = outBW.cols() * outBW.rows();
         Rect rect;
-        ArrayList<Rect> rectList = new ArrayList<>(); // hcn chua cac contour
+        ArrayList<Rect> rectList = new ArrayList<>(); // box chua cac contour
         for (int i = 0; i < contours.size(); i++) {
             rect = Imgproc.boundingRect(contours.get(i));
             w = rect.width;
@@ -102,10 +108,26 @@ public class IDCard {
             if (50 < s && s < 5000) {
                 Imgproc.rectangle(drawing, rect.tl(), rect.br(), color, 1);
                 rectList.add(rect);
-            }            
+            }
         }
         Imgcodecs.imwrite("D:/ProjectI/contours.jpg", drawing);
 
+        // list toa do cung cua cac tt can detect
+        InforList inforList = new InforList();
+        inforList.add(new Rect(new Point(0.432 * imgW, 0.24 * imgH), new Point(imgW, 0.35 * imgH)), "so");// 0 so
+        inforList.add(new Rect(new Point(0.44 * imgW, 0.35 * imgH), new Point(imgW, 0.48 * imgH)), "ten");// 1 ten
+        inforList.add(new Rect(new Point(0.58 * imgW, 0.48 * imgH), new Point(imgW, 0.58 * imgH)), "ngay_sinh");// 2 ngay sinh
+        inforList.add(new Rect(new Point(0.426 * imgW, 0.58 * imgH), new Point(0.582 * imgW, 0.66 * imgH)), "gioi_tinh");// 3 gioi tinh
+        inforList.add(new Rect(new Point(0.704 * imgW, 0.58 * imgH), new Point(imgW, 0.66 * imgH)), "quoc_tich");// 4 quoc tich
+        inforList.add(new Rect(new Point(0.447 * imgW, 0.66 * imgH), new Point(imgW, 0.735 * imgH)), "que_quan_1");// 5 que dong 1
+        inforList.add(new Rect(new Point(0.328 * imgW, 0.735 * imgH), new Point(imgW, 0.78 * imgH)), "que_quan_2");// 6 que dong 2
+        inforList.add(new Rect(new Point(0.488 * imgW, 0.78 * imgH), new Point(imgW, 0.862 * imgH)), "thuong_tru_1");// 7 thuong tru 1
+        inforList.add(new Rect(new Point(0.35 * imgW, 0.862 * imgH), new Point(imgW, imgH)), "thuong_tru_2");// 8 thuong tru 2
+        inforList.add(new Rect(new Point(0.1729 * imgW, 0.926 * imgH), new Point(0.35 * imgW, imgH)), "han_dung");// 9 han
+
+        ArrayList subLineList = new ArrayList();                 // danh sach cac chu cua tung dong
+        // tao cac box chua dong moi bao quanh cac box chu cac tu
+        ArrayList<Rect> lines = new ArrayList<>();
         // sap xep list tu tren xuong duoi (tang dan theo y)
         Collections.sort(rectList, new Comparator<Rect>() {
             @Override
@@ -113,120 +135,40 @@ public class IDCard {
                 return o1.y > o2.y ? 1 : -1;
             }
         });
-        ArrayList<ArrayList<Rect>> lineList = new ArrayList<>(); // danh sach cac dong
-        ArrayList subLineList = new ArrayList();                 // danh sach cac chu cua tung dong
-        subLineList.add(rectList.get(0));
-        for (int i = 1; i < rectList.size(); i++) {
-            if (rectList.get(i).y - rectList.get(i - 1).y > 10) {
-                lineList.add(subLineList);
-                subLineList = new ArrayList();
+        for (int i = 0; i < inforList.list.size(); i++) {
+            Rect boxInfor = inforList.list.get(i);
+            subLineList = new ArrayList();
+            for (Rect boxText : rectList) {
+                if (checkBox(boxText, boxInfor)) { // kiem tra neu box chua chu nam trong box cung thi dua vao dong
+                    subLineList.add(boxText);
+                }
             }
-            subLineList.add(rectList.get(i));
-        }
-        lineList.add(subLineList);
-        System.out.println(lineList.size());
-        // xac dinh box can cuoc cong dan
-        Rect rectCCCD = getRect(lineList.get(2));
-        System.out.println(rectCCCD.x);
-        // tao cac hcn dong moi bao quanh cac hcn chu cac tu
-        ArrayList<Rect> lines = new ArrayList<>();
-        for (ArrayList<Rect> mLineList : lineList) {
-//            // sort theo x
-//            Collections.sort(mLineList, new Comparator<Rect>() {
-//                @Override
-//                public int compare(Rect o1, Rect o2) {
-//                    return o1.x > o2.x ? 1 : -1;
-//                }
-//            });
-//            int i = 0;
-//            boolean check = false;
-//            while (i < mLineList.size() && !check) {
-//                float xrate = (float) (mLineList.get(i).x - xQH) / (rectCCCD.x - xQH);
-//                float yrate = (float) (mLineList.get(i).y - yQH) / (rectCCCD.y - yQH);
-//                if ((xrate > 1.12)
-//                        && (yrate > 1.5)) {
-//                    check = true;
-//                }
-//                i++;
-//            }
-//            i--;
-//            System.out.println((mLineList.get(i).x - xQH) + " " + (rectCCCD.x - xQH) + " " + (mLineList.get(i).y - yQH) + " " + (rectCCCD.y - yQH) + check);
-//            ArrayList<Rect> newLineList = new ArrayList<>();
-//            for (; i < mLineList.size(); i++) {
-//                newLineList.add(mLineList.get(i));
-//            }
-//            if (!newLineList.isEmpty()) {
-//                // sap xep list tu tren xuong duoi (tang dan theo y)
-//                Collections.sort(newLineList, new Comparator<Rect>() {
-//                    @Override
-//                    public int compare(Rect o1, Rect o2) {
-//                        return o1.y > o2.y ? 1 : -1;
-//                    }
-//                });
-//                Rect rect1 = getRect(newLineList);
-//                lines.add(rect1);
-//            }
-            Rect rect1 = getRect(mLineList);
-            lines.add(rect1);
-            if (rect1.width > 0.75 * outThresh.width()) {
-                // sort theo x
-                Collections.sort(mLineList, new Comparator<Rect>() {
-                    @Override
-                    public int compare(Rect o1, Rect o2) {
-                        return o1.x > o2.x ? 1 : -1;
-                    }
-                });
-                ArrayList<Rect> newList = new ArrayList<>();
-                newList.add(mLineList.get(0));
-                int i = 1;
-                while ((mLineList.get(i - 1).y - mLineList.get(i).y < 20) && (i < mLineList.size() - 1)) {
-                    newList.add(mLineList.get(i++));
-                }
-                lines.add(getRect(newList));
-                newList = new ArrayList<>();
-                while (i < mLineList.size()) {
-                    newList.add(mLineList.get(i++));
-                }
-                lines.add(getRect(newList));
-            } else {
-                lines.add(rect1);
+            if (subLineList.size() > 0) {
+                subLineList = fixSubLineList(subLineList);
+                Rect r = getRect(subLineList);
+                r = inforList.update(i, r);
+                lines.add(r);
+                Mat outLine = new Mat(outGray, r);
+                Imgcodecs.imwrite("D:/ProjectI/1" + inforList.title.get(i) + ".jpg", outLine);
             }
         }
-        // sap xep list tu tren xuong duoi (tang dan theo y)
-        Collections.sort(lines, new Comparator<Rect>() {
-            @Override
-            public int compare(Rect o1, Rect o2) {
-                return o1.y > o2.y ? 1 : -1;
-            }
-        });
+
         // ve ra xem thu
         Mat contourMat = outGray;
         for (Rect line : lines) {
             Imgproc.rectangle(contourMat, line.tl(), line.br(), color, 1);
         }
         Imgcodecs.imwrite("D:/ProjectI/contoursLine.jpg", contourMat);
-        Mat so = new Mat(outGray, lines.get(3));
-        Mat ten = new Mat(outGray, lines.get(4));
-        Mat ngay = new Mat(outGray, lines.get(5));
-        Mat gioi = new Mat(outGray, lines.get(6));
-        Mat que = new Mat(outGray, lines.get(7));
-        Mat thuong = new Mat(outGray, lines.get(8));
-        Mat thuong1 = new Mat(outGray, lines.get(9));
-        Mat han = new Mat(outGray, lines.get(10));
-        Imgcodecs.imwrite("D:/ProjectI/1so.jpg", so);
-        Imgcodecs.imwrite("D:/ProjectI/1ten.jpg", ten);
-        Imgcodecs.imwrite("D:/ProjectI/1ngay.jpg", ngay);
-        Imgcodecs.imwrite("D:/ProjectI/1gioi.jpg", gioi);
-        Imgcodecs.imwrite("D:/ProjectI/1que.jpg", que);
-        Imgcodecs.imwrite("D:/ProjectI/1thuong.jpg", thuong);
-        Imgcodecs.imwrite("D:/ProjectI/1thuong1.jpg", thuong1);
-        Imgcodecs.imwrite("D:/ProjectI/1han.jpg", han);
+        //for (Rect line : inforList.list) {Imgproc.rectangle(contourMat, line.tl(), line.br(), color1, 1);}Imgcodecs.imwrite("D:/ProjectI/contoursLine.jpg", contourMat);
+
         System.out.println("Xu ly xong!!!");
     }
 
     public class dis {
+
         int id;
         int distance;
+
         public dis(int id, int distance) {
             this.id = id;
             this.distance = distance;
@@ -248,8 +190,8 @@ public class IDCard {
     public Mat cropImg(Mat oriMat, Rect boxNe, ArrayList<Rect> cornerList) {
         ArrayList<dis> disList = new ArrayList<>();
         for (int i = 0; i < cornerList.size(); i++) {
-            int m = (int) Math.sqrt(Math.pow(cornerList.get(i).x - boxNe.x, 2) 
-                        + Math.pow(cornerList.get(i).y - boxNe.y, 2));
+            int m = (int) Math.sqrt(Math.pow(cornerList.get(i).x - boxNe.x, 2)
+                    + Math.pow(cornerList.get(i).y - boxNe.y, 2));
             disList.add(new dis(i, m));
         }
         // sap xep list tu tren xuong duoi (tang dan theo khoang cach)
@@ -279,9 +221,45 @@ public class IDCard {
         return out;
     }
 
+    // loai bo bot box khong thuoc line (co khoang cach toi line > )
+    public static ArrayList<Rect> fixSubLineList(ArrayList<Rect> mSubLineList) {
+        // sap xep list theo x
+        Collections.sort(mSubLineList, new Comparator<Rect>() {
+            @Override
+            public int compare(Rect o1, Rect o2) {
+                return o1.x > o2.x ? 1 : -1;
+            }
+        });
+        ArrayList<Rect> newSubLineList = new ArrayList<>();
+        newSubLineList.add(mSubLineList.get(0));
+        int i = 0;
+        for (int j = 1; j < mSubLineList.size(); j++) {
+            if (mSubLineList.get(j).x - newSubLineList.get(i).x < 80) {
+                newSubLineList.add(mSubLineList.get(j));
+                i++;
+            }
+        }
+        return newSubLineList;
+    }
+
+    // kiem tra diem tren trai cua box1 nam trong box2 khong
+    public static boolean checkBox(Rect box1, Rect box2) {
+        if (box1.x < box2.x || box1.y < box2.y
+                || box1.x > box2.x + box2.width || box1.y > box2.y + box2.height) {
+            return false;
+        }
+        return true;
+    }
+
     // ve box bao quanh LineList da duoc sort theo y
     public static Rect getRect(ArrayList<Rect> mLineList) {
-        // cac tu da duoc sap xep theo y tu truoc
+        // sap xep list tu tren xuong duoi (tang dan theo y)
+        Collections.sort(mLineList, new Comparator<Rect>() {
+            @Override
+            public int compare(Rect o1, Rect o2) {
+                return o1.y > o2.y ? 1 : -1;
+            }
+        });
         int yRect = mLineList.get(0).y; // y cua hcn moi la y cua tu dau tien (sort theo y)
         int hRect = 0;                  // chieu cao la max cua h tat cac tu
         int xRect = mLineList.get(0).x;  // x la x cua tu dau tien (sort theo x)
@@ -297,6 +275,8 @@ public class IDCard {
         int wRect = mLineList.get(csXMax).x - xRect + mLineList.get(csXMax).width;
         // chieu rong =  x cuoi - x dau + w cua cuoi
         //return new Rect(xRect, yRect, wRect, hRect);
-        return new Rect(xRect - 1, yRect - 1, wRect + 2, hRect + 2);
+        hRect = yRect + hRect + 1 < 300 ? hRect + 2 : hRect + 1;
+        return new Rect(xRect - 1, yRect - 1, wRect + 2, hRect);
     }
+
 }
