@@ -27,7 +27,7 @@ public class tess {
             // the path of your tess data folder 
             // inside the extracted file 
             String text 
-                = tesseract.doOCR(new File("D:\\ProjectI\\1ten.jpg")); 
+                = tesseract.doOCR(new File("D:\\ProjectI\\1han_dung.jpg")); 
   
             // path of your image file 
             System.out.print(text); 
