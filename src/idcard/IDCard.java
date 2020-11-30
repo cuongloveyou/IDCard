@@ -40,7 +40,7 @@ public class IDCard {
     public static void main(String[] args) throws IOException {
         // TODO code application logic here
         System.load("D:\\OpenCV\\opencv\\build\\java\\x64\\opencv_java440.dll");
-        String file = "D:\\DATN\\sampleTrain\\119111316_3275929089194351_7971241321062373201_o.jpg";
+        String file = "D:\\DATN\\Img\\sample\\standard\\imgEx1.jpg";
         Process p = Runtime.getRuntime().exec("cmd /c start cmd.exe /K \"cd cropImg && python YOLO.py -i "
                 + file + " -cl yolo.names -w yolov4-custom_final.weights -c yolov4-custom.cfg && exit\"");
         BufferedReader is
