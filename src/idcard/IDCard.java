@@ -40,7 +40,7 @@ public class IDCard {
     public static void main(String[] args) throws IOException {
         // TODO code application logic here
         System.load("D:\\OpenCV\\opencv\\build\\java\\x64\\opencv_java440.dll");
-        String file = "D:\\DATN\\Img\\sample\\standard\\imgEx1.jpg";
+        String file = "D:\\DATN\\Img\\cmt\\standard\\imgEx21.jpg";
         Process p = Runtime.getRuntime().exec("cmd /c start cmd.exe /K \"cd cropImg && python CROPIMG-YOLO.py -i "
                 + file + " -cl cropImg-yolo.names -w cropImg-yolov4-custom_final.weights -c yolov4-custom.cfg && exit\"");
         BufferedReader is
@@ -68,7 +68,56 @@ public class IDCard {
         Mat oriMat = Imgcodecs.imread(file);
         IDCard iDCard = new IDCard();
         Mat cropMat = iDCard.cropImg(oriMat, boxNE, cornerList);
-        Imgcodecs.imwrite("D:/ProjectI/cropImg.jpg", cropMat);
+        String cropFileString = "D:\\ProjectI\\cropImg.jpg";
+        Imgcodecs.imwrite(cropFileString, cropMat);
+
+        // tim quoc huy
+        Process findNEProcess = Runtime.getRuntime().exec("cmd /c start cmd.exe /K \"cd cropImg && python CROPIMG-YOLO.py -i "
+                + cropFileString + " -cl cropImg-yolo.names -w cropImg-yolov4-custom_final.weights -c yolov4-custom.cfg && exit\"");
+        BufferedReader iss
+                = new BufferedReader(new InputStreamReader(findNEProcess.getInputStream()));
+        // reading the output 
+        while (iss.readLine() != null);
+        Scanner sc0 = new Scanner(new File("D:\\DATN\\NetBeans\\IDCard\\cropImg\\boxes.txt"));
+        sc0.nextLine();
+        while (sc0.hasNextLine()) {
+            classId = sc0.nextInt();
+            x = sc0.nextInt();
+            y = sc0.nextInt();
+            w = sc0.nextInt();
+            h = sc0.nextInt();
+            if (classId == 1) {
+                boxNE = new Rect(x, y, w, h);
+            }
+        }
+        System.out.println("NE: " + iDCard.getCenterBox(boxNE));
+        boolean isCccd = iDCard.getCenterBox(boxNE).y < 60.0; // cccd co quoc huy cao hon so voi cmt
+
+        // tim thong tin cmt
+        Process getInforProcess = Runtime.getRuntime().exec("cmd /c start cmd.exe /K \"cd cropImg && "
+                + "python DETECTINFOR-YOLO.py -i " + cropFileString + " -cl detectInfor-yolo.names "
+                + "-w detectInfor-yolov4-custom_final.weights -c yolov4-custom.cfg && exit\"");
+        BufferedReader isss
+                = new BufferedReader(new InputStreamReader(getInforProcess.getInputStream()));
+        // reading the output 
+        while (isss.readLine() != null);
+        Scanner sc1 = new Scanner(new File("D:\\DATN\\NetBeans\\IDCard\\cropImg\\infor.txt"));
+        ArrayList<Rect> idList = new ArrayList<>(); //so cmt
+        ArrayList<Rect> personalInforList = new ArrayList<>(); //thong tin khac
+        sc1.nextLine();
+        while (sc1.hasNextLine()) {
+            classId = sc1.nextInt();
+            x = sc1.nextInt();
+            y = sc1.nextInt();
+            w = sc1.nextInt();
+            h = sc1.nextInt();
+            if (classId == 1) {
+                personalInforList.add(new Rect(x, y, w, h));
+            } else {
+                personalInforList.add(new Rect(x, y, w, h));
+            }
+            System.out.println(classId + " " + x + " " + y + " " + w + " " + h);
+        }
 
         int imgW = cropMat.cols();
         int imgH = cropMat.rows();
@@ -97,7 +146,6 @@ public class IDCard {
         Scalar color = new Scalar(255, 255, 255);
         Scalar color1 = new Scalar(222, 111, 111);
         int s;
-        int sImg = outBW.cols() * outBW.rows();
         Rect rect;
         ArrayList<Rect> rectList = new ArrayList<>(); // box chua cac contour
         for (int i = 0; i < contours.size(); i++) {
@@ -114,16 +162,27 @@ public class IDCard {
 
         // list toa do cung cua cac tt can detect
         InforList inforList = new InforList();
-        inforList.add(new Rect(new Point(0.432 * imgW, 0.24 * imgH), new Point(imgW, 0.35 * imgH)), "so");// 0 so
-        inforList.add(new Rect(new Point(0.44 * imgW, 0.35 * imgH), new Point(imgW, 0.48 * imgH)), "ten");// 1 ten
-        inforList.add(new Rect(new Point(0.58 * imgW, 0.48 * imgH), new Point(imgW, 0.58 * imgH)), "ngay_sinh");// 2 ngay sinh
-        inforList.add(new Rect(new Point(0.426 * imgW, 0.58 * imgH), new Point(0.582 * imgW, 0.66 * imgH)), "gioi_tinh");// 3 gioi tinh
-        inforList.add(new Rect(new Point(0.704 * imgW, 0.58 * imgH), new Point(imgW, 0.66 * imgH)), "quoc_tich");// 4 quoc tich
-        inforList.add(new Rect(new Point(0.447 * imgW, 0.66 * imgH), new Point(imgW, 0.735 * imgH)), "que_quan_1");// 5 que dong 1
-        inforList.add(new Rect(new Point(0.328 * imgW, 0.735 * imgH), new Point(imgW, 0.78 * imgH)), "que_quan_2");// 6 que dong 2
-        inforList.add(new Rect(new Point(0.488 * imgW, 0.78 * imgH), new Point(imgW, 0.862 * imgH)), "thuong_tru_1");// 7 thuong tru 1
-        inforList.add(new Rect(new Point(0.35 * imgW, 0.862 * imgH), new Point(imgW, imgH)), "thuong_tru_2");// 8 thuong tru 2
-        inforList.add(new Rect(new Point(0.1729 * imgW, 0.926 * imgH), new Point(0.35 * imgW, imgH)), "han_dung");// 9 han
+        if (isCccd) { // neu la can cuoc cong dan
+            inforList.add(new Rect(new Point(0.32 * imgW, 0.24 * imgH), new Point(imgW, 0.35 * imgH)), "so");// 0 so
+            inforList.add(new Rect(new Point(0.32 * imgW, 0.35 * imgH), new Point(imgW, 0.48 * imgH)), "ten");// 1 ten
+            inforList.add(new Rect(new Point(0.32 * imgW, 0.48 * imgH), new Point(imgW, 0.58 * imgH)), "ngay_sinh");// 2 ngay sinh
+            inforList.add(new Rect(new Point(0.32 * imgW, 0.58 * imgH), new Point(0.582 * imgW, 0.66 * imgH)), "gioi_tinh");// 3 gioi tinh
+            inforList.add(new Rect(new Point(0.65 * imgW, 0.58 * imgH), new Point(imgW, 0.66 * imgH)), "quoc_tich");// 4 quoc tich
+            inforList.add(new Rect(new Point(0.32 * imgW, 0.66 * imgH), new Point(imgW, 0.735 * imgH)), "que_quan_1");// 5 que dong 1
+            inforList.add(new Rect(new Point(0.32 * imgW, 0.735 * imgH), new Point(imgW, 0.78 * imgH)), "que_quan_2");// 6 que dong 2
+            inforList.add(new Rect(new Point(0.32 * imgW, 0.78 * imgH), new Point(imgW, 0.862 * imgH)), "thuong_tru_1");// 7 thuong tru 1
+            inforList.add(new Rect(new Point(0.32 * imgW, 0.862 * imgH), new Point(imgW, imgH)), "thuong_tru_2");// 8 thuong tru 2
+            inforList.add(new Rect(new Point(0.1729 * imgW, 0.9 * imgH), new Point(0.32 * imgW, imgH)), "han_dung");// 9 han   
+        } else { // neu la chung minh thu
+            System.out.println("cmt");
+            inforList.add(new Rect(new Point(0, 0.2 * imgH), new Point(imgW, 0.315 * imgH)), "so");// 0 so
+            inforList.add(new Rect(new Point(0, 0.315 * imgH), new Point(imgW, 0.49 * imgH)), "ten");// 1 ten
+            inforList.add(new Rect(new Point(0, 0.49 * imgH), new Point(imgW, 0.59 * imgH)), "ngay_sinh");// 2 ngay sinh
+            inforList.add(new Rect(new Point(0, 0.59 * imgH), new Point(imgW, 0.67 * imgH)), "que_quan_1");// 5 que dong 1
+            inforList.add(new Rect(new Point(0, 0.67 * imgH), new Point(imgW, 0.775 * imgH)), "que_quan_2");// 6 que dong 2
+            inforList.add(new Rect(new Point(0, 0.775 * imgH), new Point(imgW, 0.86 * imgH)), "thuong_tru_1");// 7 thuong tru 1
+            inforList.add(new Rect(new Point(0, 0.86 * imgH), new Point(imgW, imgH)), "thuong_tru_2");// 8 thuong tru 2
+        }
 
         ArrayList subLineList = new ArrayList();                 // danh sach cac chu cua tung dong
         // tao cac box chua dong moi bao quanh cac box chu cac tu
@@ -135,21 +194,16 @@ public class IDCard {
                 return o1.y > o2.y ? 1 : -1;
             }
         });
-        for (int i = 0; i < inforList.list.size(); i++) {
-            Rect boxInfor = inforList.list.get(i);
-            subLineList = new ArrayList();
-            for (Rect boxText : rectList) {
+
+        for (Rect boxText : personalInforList) {
+            for (int i = 0; i < inforList.list.size(); i++) {
+                Rect boxInfor = inforList.list.get(i);
+                subLineList = new ArrayList();
                 if (checkBox(boxText, boxInfor)) { // kiem tra neu box chua chu nam trong box cung thi dua vao dong
-                    subLineList.add(boxText);
+                    Mat outLine = new Mat(outGray, boxText);
+                    lines.add(boxText);
+                    Imgcodecs.imwrite("D:/ProjectI/1" + inforList.title.get(i) + ".jpg", outLine);
                 }
-            }
-            if (subLineList.size() > 0) {
-                subLineList = fixSubLineList(subLineList);
-                Rect r = getRect(subLineList);
-                r = inforList.update(i, r);
-                lines.add(r);
-                Mat outLine = new Mat(outGray, r);
-                Imgcodecs.imwrite("D:/ProjectI/1" + inforList.title.get(i) + ".jpg", outLine);
             }
         }
 
@@ -159,7 +213,10 @@ public class IDCard {
             Imgproc.rectangle(contourMat, line.tl(), line.br(), color, 1);
         }
         Imgcodecs.imwrite("D:/ProjectI/contoursLine.jpg", contourMat);
-        //for (Rect line : inforList.list) {Imgproc.rectangle(contourMat, line.tl(), line.br(), color1, 1);}Imgcodecs.imwrite("D:/ProjectI/contoursLine.jpg", contourMat);
+        for (Rect line : inforList.list) {
+            Imgproc.rectangle(contourMat, line.tl(), line.br(), color1, 1);
+        }
+        Imgcodecs.imwrite("D:/ProjectI/contoursLine.jpg", contourMat);
 
         System.out.println("Xu ly xong!!!");
     }
@@ -210,7 +267,9 @@ public class IDCard {
         // fix lai toa do cac goc 1 chut
         top_left = fixCenterBox(centerBoxNe, top_left);
         bottom_left = fixCenterBox(centerBoxNe, bottom_left);
+        bottom_left = fixCenterBox(centerBoxNe, bottom_left);
         top_right = fixCenterBox(centerBoxNe, top_right);
+        bottom_right = fixCenterBox(centerBoxNe, bottom_right);
         bottom_right = fixCenterBox(centerBoxNe, bottom_right);
 
         MatOfPoint2f src = new MatOfPoint2f(top_left, top_right, bottom_right, bottom_left);
