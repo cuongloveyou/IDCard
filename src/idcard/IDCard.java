@@ -40,14 +40,16 @@ public class IDCard {
     public static void main(String[] args) throws IOException {
         // TODO code application logic here
         System.load("D:\\OpenCV\\opencv\\build\\java\\x64\\opencv_java440.dll");
-        String file = "D:\\DATN\\Img\\cmt\\standard\\imgEx21.jpg";
+        String filePath = new File("").getAbsolutePath();
+        String file = "D:\\DATN\\Img\\cccd\\standard\\imgEx38.jpg";
         Process p = Runtime.getRuntime().exec("cmd /c start cmd.exe /K \"cd cropImg && python CROPIMG-YOLO.py -i "
                 + file + " -cl cropImg-yolo.names -w cropImg-yolov4-custom_final.weights -c yolov4-custom.cfg && exit\"");
         BufferedReader is
                 = new BufferedReader(new InputStreamReader(p.getInputStream()));
         // reading the output 
         while (is.readLine() != null);
-        Scanner sc = new Scanner(new File("D:\\DATN\\NetBeans\\IDCard\\cropImg\\boxes.txt"));
+        String boxesFile = filePath + "\\cropImg\\boxes.txt";
+        Scanner sc = new Scanner(new File(boxesFile));
         int classId, x, y, w, h;
         Rect boxNE = null; // box chua Quoc Huy
         ArrayList<Rect> cornerList = new ArrayList<>();
@@ -78,7 +80,7 @@ public class IDCard {
                 = new BufferedReader(new InputStreamReader(findNEProcess.getInputStream()));
         // reading the output 
         while (iss.readLine() != null);
-        Scanner sc0 = new Scanner(new File("D:\\DATN\\NetBeans\\IDCard\\cropImg\\boxes.txt"));
+        Scanner sc0 = new Scanner(new File(boxesFile));
         sc0.nextLine();
         while (sc0.hasNextLine()) {
             classId = sc0.nextInt();
@@ -101,7 +103,8 @@ public class IDCard {
                 = new BufferedReader(new InputStreamReader(getInforProcess.getInputStream()));
         // reading the output 
         while (isss.readLine() != null);
-        Scanner sc1 = new Scanner(new File("D:\\DATN\\NetBeans\\IDCard\\cropImg\\infor.txt"));
+        String inforFile = filePath + "\\cropImg\\infor.txt";
+        Scanner sc1 = new Scanner(new File(inforFile));
         ArrayList<Rect> idList = new ArrayList<>(); //so cmt
         ArrayList<Rect> personalInforList = new ArrayList<>(); //thong tin khac
         sc1.nextLine();
@@ -136,6 +139,7 @@ public class IDCard {
         Imgcodecs.imwrite("D:/ProjectI/gray.jpg", outBW);
         Mat outThresh = outBW;
         Imgproc.threshold(outBW, outThresh, 0, 255, Imgproc.THRESH_BINARY + Imgproc.THRESH_OTSU); // nhi phan hoa
+        //Imgproc.adaptiveThreshold(outBW, outThresh, 125, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY_INV, 11, 12);
         Imgcodecs.imwrite("D:/ProjectI/thresh.jpg", outThresh);
 
         List<MatOfPoint> contours = new ArrayList<>(); // matofpoint??? // ve contours
@@ -200,7 +204,7 @@ public class IDCard {
                 Rect boxInfor = inforList.list.get(i);
                 subLineList = new ArrayList();
                 if (checkBox(boxText, boxInfor)) { // kiem tra neu box chua chu nam trong box cung thi dua vao dong
-                    Mat outLine = new Mat(outGray, boxText);
+                    Mat outLine = new Mat(cropMat, boxText);
                     lines.add(boxText);
                     Imgcodecs.imwrite("D:/ProjectI/1" + inforList.title.get(i) + ".jpg", outLine);
                 }
